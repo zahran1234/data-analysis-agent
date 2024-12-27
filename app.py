@@ -1,11 +1,12 @@
 import streamlit as st
 import pandas as pd
 from langchain_experimental.agents.agent_toolkits import create_pandas_dataframe_agent
-from langchain.chat_models import ChatOpenAI
 from langchain.agents.agent_types import AgentType
 from dotenv import load_dotenv
 import os
+from langchain_community.chat_models import ChatOpenAI
 import nest_asyncio
+from pathlib import Path
 
 # Apply asyncio to avoid nested event loop issues
 nest_asyncio.apply()
@@ -16,46 +17,90 @@ load_dotenv()
 # Set OpenAI API key
 os.environ['OPENAI_API_KEY'] = "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"
 
-# Streamlit App
+# Directory to save uploaded files
+UPLOADS_DIR = "uploads"
+
+# Create uploads directory if not exists
+os.makedirs(UPLOADS_DIR, exist_ok=True)
+
+# Function to save the uploaded file locally
+def save_uploaded_file(uploaded_file):
+    file_path = os.path.join(UPLOADS_DIR, uploaded_file.name)
+    with open(file_path, "wb") as f:
+        f.write(uploaded_file.getbuffer())
+    return file_path
+
+# Function to load the data from the saved file
+@st.cache_data(show_spinner=True)
+def load_data(file_path):
+    if file_path.endswith(".xlsx"):
+        return pd.read_excel(file_path)
+    elif file_path.endswith(".csv"):
+        return pd.read_csv(file_path)
+    else:
+        raise ValueError("Unsupported file format. Please upload an Excel or CSV file.")
+
 def main():
     st.title("Dataframe Q&A App")
-    
-    # File upload
-    st.sidebar.header("Upload Your Data")
-    uploaded_file = st.sidebar.file_uploader("Upload an Excel file", type=["xlsx"])
-    
-    if uploaded_file is not None:
-        try:
-            # Load the uploaded Excel file
-            df = pd.read_excel(uploaded_file)
-            st.write("### Uploaded Data Preview")
-            st.dataframe(df, use_container_width=True)
-            
-            # Create the agent
-            agent = create_pandas_dataframe_agent(
-                llm=ChatOpenAI(temperature=0, model="gpt-4o"),
-                df=df,
-                verbose=True,
-                agent_type=AgentType.OPENAI_FUNCTIONS,
-                allow_dangerous_code=True,
 
-            )
-            
-            # Query Section
-            st.write("### Ask Questions About Your Data")
-            user_question = st.text_input("Enter your question:") +"if you can represent the user query in tables do it add poivit table if you can " 
-            
-            if user_question:
-                # Run the query
-                with st.spinner("Processing..."):
-                    response = agent.invoke(user_question)
-                st.write("### Answer:")
-                st.write(response['output'])
-        
-        except Exception as e:
-            st.error(f"Error: {e}")
+    # Sidebar: File options
+    st.sidebar.header("File Options")
+
+    # Get existing files in the uploads directory
+    existing_files = [f.name for f in Path(UPLOADS_DIR).glob("*") if f.is_file() and f.suffix in [".xlsx", ".csv"]]
+
+    
+    # Option to upload a new file or use an existing one
+    use_existing_file = st.sidebar.radio(
+        "Select an option:",
+        ["Upload New File"] + existing_files
+    )
+
+    if use_existing_file == "Upload New File":
+        # File upload input
+        uploaded_file = st.sidebar.file_uploader("Upload an Excel or CSV file", type=["xlsx", "csv"])
+
+        if uploaded_file is not None:
+            # Save the uploaded file locally
+            file_path = save_uploaded_file(uploaded_file)
+
+            # Load the data
+            df = load_data(file_path)
+        else:
+            st.info("Please upload a file to get started.")
+            return
     else:
-        st.info("Please upload an Excel file to begin.")
+        # Use an existing file
+        file_path = os.path.join(UPLOADS_DIR, use_existing_file)
+        df = load_data(file_path)
+        st.sidebar.info(f"Using existing file: {use_existing_file}")
+
+    # Display the DataFrame preview
+    st.write("### Uploaded Data Preview")
+    st.dataframe(df.head(10), use_container_width=True)
+
+    # Create the agent
+    agent = create_pandas_dataframe_agent(
+        llm=ChatOpenAI(temperature=0, model="gpt-4o"),
+        df=df,
+        verbose=True,
+        agent_type=AgentType.OPENAI_FUNCTIONS,
+        allow_dangerous_code=True,
+    )
+
+    # Query Section
+    st.write("### Ask Questions About Your Data")
+    instructions = """
+    "If the user query can be represented using tables, please structure the data in a clear and readable table format. If applicable, include a pivot table to summarize or analyze the data, highlighting key trends or insights. Ensure the tables are well-organized with appropriate column headers and formatted for easy interpretation. If any data transformations or calculations are needed for the pivot table, perform them to provide a deeper understanding of the dataset."
+    """
+    user_question = st.text_input("Enter your question:") + instructions
+
+    if user_question:
+        # Run the query
+        with st.spinner("Processing..."):
+            response = agent.invoke(user_question)
+        st.write("### Answer:")
+        st.write(response['output'])
 
 if __name__ == "__main__":
     main()
