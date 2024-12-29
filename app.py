@@ -95,8 +95,21 @@ def main():
     # Query Section
     st.write("### Ask Questions About Your Data")
     instructions = """
-       If the user query can be represented using tables, please structure the data in a clear and readable table format. If applicable, include a pivot table to summarize or analyze the data, highlighting key trends or insights. Ensure the tables are well-organized with appropriate column headers and formatted for easy interpretation. If any data transformations or calculations are needed for the pivot table, perform them to provide a deeper understanding of the dataset.
+    When responding to a user query, if the data can be represented in a table, ensure that the response is structured in a clear and well-organized table format. 
+    If applicable, consider transforming the table into a pivot table to provide a deeper insight into the dataset. 
+
+    For example, if the user asks for an overview of the data, provide a pivot table that summarizes key metrics such as count, mean, median, standard deviation, and any other relevant statistics. 
+    This will help highlight trends and make the data more understandable. 
+
+    Additionally, include relevant statistical information such as:
+    - Total counts (e.g., number of rows or non-null values)
+    - Mean, median, mode for numerical columns
+    - Standard deviation, min, max for understanding the spread of the data
+    - For categorical data, include counts or percentages for each category
+
+    Always ensure that the tables are easy to read, with appropriate column headers, and that the response is tailored to the user's query in a clear and concise manner. 
     """
+
     
     user_question = st.text_input("Enter your question:") 
 
