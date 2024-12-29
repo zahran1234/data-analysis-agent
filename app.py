@@ -15,6 +15,8 @@ nest_asyncio.apply()
 load_dotenv()
 
 # Set OpenAI API key
+
+
 os.environ['OPENAI_API_KEY'] = "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"
 
 # Directory to save uploaded files
@@ -47,8 +49,7 @@ def main():
     st.sidebar.header("File Options")
 
     # Get existing files in the uploads directory
-    existing_files = [f.name for f in Path(UPLOADS_DIR).glob("*") if f.is_file() and f.suffix in [".xlsx", ".csv"]]
-
+    existing_files = [f.name for f in Path(UPLOADS_DIR).glob("*") if f.is_file()]
     
     # Option to upload a new file or use an existing one
     use_existing_file = st.sidebar.radio(
@@ -91,16 +92,17 @@ def main():
     # Query Section
     st.write("### Ask Questions About Your Data")
     instructions = """
-    "If the user query can be represented using tables, please structure the data in a clear and readable table format. If applicable, include a pivot table to summarize or analyze the data, highlighting key trends or insights. Ensure the tables are well-organized with appropriate column headers and formatted for easy interpretation. If any data transformations or calculations are needed for the pivot table, perform them to provide a deeper understanding of the dataset."
+       If the user query can be represented using tables, please structure the data in a clear and readable table format. If applicable, include a pivot table to summarize or analyze the data, highlighting key trends or insights. Ensure the tables are well-organized with appropriate column headers and formatted for easy interpretation. If any data transformations or calculations are needed for the pivot table, perform them to provide a deeper understanding of the dataset.
     """
-    user_question = st.text_input("Enter your question:") + instructions
+    
+    user_question = st.text_input("Enter your question:") 
 
     if user_question:
         # Run the query
         with st.spinner("Processing..."):
-            response = agent.invoke(user_question)
+            response = agent.invoke(f"""this is the user query {user_question}+ instuction should follow it {instructions}""")
         st.write("### Answer:")
         st.write(response['output'])
 
 if __name__ == "__main__":
-    main()
+    main()  
