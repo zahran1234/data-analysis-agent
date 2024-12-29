@@ -14,11 +14,6 @@ nest_asyncio.apply()
 # Load environment variables
 load_dotenv()
 
-# Set OpenAI API key
-
-
-os.environ['OPENAI_API_KEY'] = "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"
-
 # Directory to save uploaded files
 UPLOADS_DIR = "uploads"
 
@@ -47,6 +42,14 @@ def main():
 
     # Sidebar: File options
     st.sidebar.header("File Options")
+
+    # Get OpenAI API key from user
+    openai_key = st.sidebar.text_input("Enter your OpenAI API key", type="password")
+
+    if openai_key:
+        os.environ['OPENAI_API_KEY'] = openai_key
+    else:
+        st.sidebar.warning("Please enter your OpenAI API key.")
 
     # Get existing files in the uploads directory
     existing_files = [f.name for f in Path(UPLOADS_DIR).glob("*") if f.is_file()]
@@ -82,7 +85,7 @@ def main():
 
     # Create the agent
     agent = create_pandas_dataframe_agent(
-        llm=ChatOpenAI(temperature=0, model="gpt-4o"),
+        llm=ChatOpenAI(temperature=0, model="gpt-4"),
         df=df,
         verbose=True,
         agent_type=AgentType.OPENAI_FUNCTIONS,
@@ -100,9 +103,9 @@ def main():
     if user_question:
         # Run the query
         with st.spinner("Processing..."):
-            response = agent.invoke(f"""this is the user query {user_question}+ instuction should follow it {instructions}""")
+            response = agent.invoke(f"""this is the user query {user_question}+ instruction should follow it {instructions}""")
         st.write("### Answer:")
         st.write(response['output'])
 
 if __name__ == "__main__":
-    main()  
+    main()
