@@ -95,20 +95,21 @@ def main():
     # Query Section
     st.write("### Ask Questions About Your Data")
     instructions = """
-    When responding to a user query, if the data can be represented in a table, ensure that the response is structured in a clear and well-organized table format. 
-    If applicable, consider transforming the table into a pivot table to provide a deeper insight into the dataset. 
+    - **If the user query can be represented in a pivot table**, prioritize this option. A pivot table is ideal for summarizing key insights and aggregating data in a meaningful way. 
+      Always aim to create a pivot table that highlights important metrics :
+    
 
-    For example, if the user asks for an overview of the data, provide a pivot table that summarizes key metrics such as count, mean, median, standard deviation, and any other relevant statistics. 
-    This will help highlight trends and make the data more understandable. 
+    - **If the user query cannot be represented in a pivot table**, then represent the data in a regular table format. 
+      Provide a well-organized table with appropriate column headers and ensure that the data is presented clearly for easy interpretation. 
+      If possible, include statistical summaries or insights to help the user understand the data better.
+    
+    - The goal is to make the response as informative and actionable as possible. Pivot tables should always be the first choice for summarizing large datasets or answering queries that involve aggregation or analysis.
+    - Only when pivot tables are not suitable, should you fall back to a regular table format or other forms of data representation.
+    -make response summerized 
+    make sure the reponse for bussness peaple so the output shloud be structure in table format 
+"""
 
-    Additionally, include relevant statistical information such as:
-    - Total counts (e.g., number of rows or non-null values)
-    - Mean, median, mode for numerical columns
-    - Standard deviation, min, max for understanding the spread of the data
-    - For categorical data, include counts or percentages for each category
 
-    Always ensure that the tables are easy to read, with appropriate column headers, and that the response is tailored to the user's query in a clear and concise manner. 
-    """
 
     
     user_question = st.text_input("Enter your question:") 
@@ -116,7 +117,7 @@ def main():
     if user_question:
         # Run the query
         with st.spinner("Processing..."):
-            response = agent.invoke(f"""this is the user query {user_question}+ instruction should follow it {instructions}""")
+            response = agent.invoke(f"""this is the user query {user_question}+"\n instruction should follow it {instructions}""")
         st.write("### Answer:")
         st.write(response['output'])
 
